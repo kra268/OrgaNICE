@@ -22,6 +22,26 @@ def browse_directory():
         message_label.config(text="")  # Clear any previous messages
 
 
+def grouper(identifier, source_dir):
+    # Get a list of all files in the source directory
+    all_files = glob.glob(os.path.join(source_dir, '*'))
+
+    # Extract file extensions and create a set to store unique file types
+    file_types = set(os.path.splitext(file)[1] for file in all_files)
+    id_files = [file for file in all_files if identifier in file]
+
+    # Create a folder for the current file type in the source directory
+    folder_name = identifier + '_files'
+    folder_path = os.path.join(source_dir, folder_name)
+    create_folder(folder_path)
+
+    # Move each file to the corresponding folder
+    for file in id_files:
+        shutil.move(file, folder_path)
+        # print(f"Moved {file} to {folder_path}")
+        output_text.insert(tk.END, f"Moved {file} to {folder_path}\n")
+
+
 # Function to sort files in the selected directory
 def sort_files():
     if not source_dir:
@@ -55,6 +75,17 @@ def sort_files():
     message_label.config(text="Files sorted successfully!", fg="green")
 
 
+def sort_by_id(identifier_entry):
+    if not source_dir:
+        message_label.config(text="Please select a directory first.", fg="red")
+        return
+
+    identifier = identifier_entry.get().strip()
+    if identifier:
+        grouper(identifier, source_dir)
+        output_text.insert(tk.END, f"Files sorted by {identifier} successfully!\n")
+
+
 # Function to create the GUI
 def create_gui():
     global selected_dir_label, message_label, output_text
@@ -72,6 +103,18 @@ def create_gui():
     # Label to show the selected directory
     selected_dir_label = tk.Label(root, text="No directory selected")
     selected_dir_label.pack(pady=5)
+
+    # Entry for user to input an identifier to filter files
+    identifier_label = tk.Label(root, text="Enter identifier to filter files (e.g., 'report'):")
+    identifier_label.pack(pady=5)
+    identifier_entry = tk.Entry(root, width=20)
+    identifier_entry.pack(pady=5)
+
+    # Button to sort files by identifier
+    sort_identifier_button = tk.Button(root, text="Sort Files by Identifier",
+                                       command=lambda: threading.Thread(target=sort_by_id,
+                                                                        args=(identifier_entry,)).start())
+    sort_identifier_button.pack(pady=10)
 
     # Create and place a button for sorting files
     sort_button = tk.Button(root, text="Sort Files", command=lambda: threading.Thread(target=sort_files).start())
